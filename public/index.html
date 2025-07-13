@@ -108,6 +108,10 @@
         import 'https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore-compat.js';
         import 'https://www.gstatic.com/firebasejs/9.10.0/firebase-functions-compat.js';
 
+        // =================================================================================
+        // CRITICAL: REPLACE with your actual Firebase project configuration.
+        // This MUST be correct for the app to connect to your Firebase backend.
+        // =================================================================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -122,8 +126,9 @@
         const db = firebase.firestore();
         const functions = firebase.functions();
 
-        // Calling the new V3 function
-        const callRpgAssistantCloudFunction = functions.httpsCallable('callRpgAssistantV3');
+        // Define the name of the function to call.
+        const functionName = 'callRpgAssistantV3';
+        const callRpgAssistantCloudFunction = functions.httpsCallable(functionName);
 
         let currentUser = null;
         const authContainer = document.getElementById('auth-container');
@@ -164,13 +169,15 @@
             chatMessages.appendChild(thinkingMessage);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             try {
+                // DEBUG: Log the function name we are about to call.
+                console.log(`Attempting to call function: ${functionName}`);
                 const result = await callRpgAssistantCloudFunction({ userPrompt, conversationHistory });
                 chatMessages.removeChild(thinkingMessage);
                 const responseText = result.data.response;
                 addMessageToUI('ai', responseText);
                 conversationHistory.push({ role: "model", parts: [{ text: responseText }] });
             } catch (error) {
-                console.error("Error calling AI assistant Cloud Function:", error);
+                console.error(`Error calling AI assistant Cloud Function (${functionName}):`, error);
                 chatMessages.removeChild(thinkingMessage);
                 addMessageToUI('ai', 'Sorry, an error occurred. Please check the console for details.');
             }
