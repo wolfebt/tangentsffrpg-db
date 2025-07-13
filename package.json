@@ -1,0 +1,28 @@
+{
+  "name": "tangent-sff-rpg-functions",
+  "version": "1.0.0",
+  "description": "Cloud Functions for the Tangent SFF RPG.",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "@genkit-ai/googleai": "0.6.1",
+    "firebase-admin": "12.1.1",
+    "firebase-functions": "5.0.1",
+    "genkit": "0.6.1"
+  },
+  "devDependencies": {
+    "typescript": "5.5.2",
+    "firebase-functions-test": "3.3.0"
+  },
+  "private": true
+}
