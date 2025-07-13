@@ -29,7 +29,8 @@ const ai = genkit({
             apiKey: process.env.GEMINI_API_KEY, // Reads the key set in the GCP Console
         }),
     ],
-    model: gemini('gemini-pro'),
+    // FINAL FIX: Using the correct, current model name.
+    model: gemini('gemini-1.0-pro'),
 });
 
 // =========================================================
@@ -78,7 +79,7 @@ export const callRpgAssistantV2 = onCall(
     },
     async (request: CallableRequest<{ userPrompt: string, conversationHistory: any[] }>) => {
         // This log message is added to force a redeployment.
-        console.log("Executing function version 2.0...");
+        console.log("Executing function version 3.0...");
 
         // 1. Authentication Check
         if (!request.auth) {
