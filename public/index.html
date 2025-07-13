@@ -80,7 +80,7 @@
             <h1 class="brand-heading text-6xl md:text-8xl">TANGENT</h1>
             <h2 class="brand-subtitle text-xl md:text-2xl text-gray-300 mt-2 font-light tracking-wider">Science Fiction and Fantasy Role Playing Game</h2>
             <!-- VISUAL CONFIRMATION: If you see this version number, the new HTML is loaded. -->
-            <p class="text-gray-400 text-sm mt-4">UI Version: 1.2</p>
+            <p class="text-gray-400 text-sm mt-4">UI Version: 1.3</p>
         </div>
         <div id="dynamic-content-container" class="w-full max-w-sm flex flex-col items-center gap-6">
             <div id="firebaseui-auth-container"></div>
@@ -102,7 +102,8 @@
                 <button type="submit" id="send-prompt-button">Send</button>
             </form>
         </div>
-    </footer>
+    </div>
+    <footer></footer>
     <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
     <script type="module">
         import 'https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js';
@@ -110,10 +111,6 @@
         import 'https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore-compat.js';
         import 'https://www.gstatic.com/firebasejs/9.10.0/firebase-functions-compat.js';
 
-        // =================================================================================
-        // CRITICAL: REPLACE with your actual Firebase project configuration.
-        // This MUST be correct for the app to connect to your Firebase backend.
-        // =================================================================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -128,7 +125,6 @@
         const db = firebase.firestore();
         const functions = firebase.functions();
 
-        // Define the name of the function to call.
         const functionName = 'callRpgAssistantV3';
         const callRpgAssistantCloudFunction = functions.httpsCallable(functionName);
 
@@ -171,7 +167,6 @@
             chatMessages.appendChild(thinkingMessage);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             try {
-                // DEBUG: Log the function name we are about to call.
                 console.log(`Attempting to call function: ${functionName}`);
                 const result = await callRpgAssistantCloudFunction({ userPrompt, conversationHistory });
                 chatMessages.removeChild(thinkingMessage);
@@ -202,11 +197,15 @@
                 authContainer.innerHTML = `<div class="flex items-center gap-4"><span class="text-sm text-gray-300">${user.displayName || user.email}</span><button id="logout-trigger-button" class="auth-button">Logout</button></div>`;
                 document.getElementById('logout-trigger-button').addEventListener('click', () => auth.signOut());
             } else {
-                firebaseuiContainer.classList.remove('hidden');
                 navigationMenu.classList.add('hidden');
                 chatbotContainer.classList.add('hidden');
+                firebaseuiContainer.classList.remove('hidden');
                 authContainer.innerHTML = '';
-                ui.start('#firebaseui-auth-container', uiConfig);
+                // Only start the FirebaseUI Auth widget if it's not already running.
+                if (ui.isPendingRedirect()) {
+                    ui.start('#firebaseui-auth-container', uiConfig);
+                }
+                 ui.start('#firebaseui-auth-container', uiConfig);
             }
         });
     </script>
