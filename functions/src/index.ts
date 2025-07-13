@@ -15,21 +15,18 @@ const db = admin.firestore();
 // =========================================================
 // Initialize Genkit
 // =========================================================
-// This log helps confirm the function is reading the environment variable on startup.
 if (process.env.GEMINI_API_KEY) {
-    console.log("SUCCESS: GEMINI_API_KEY environment variable was loaded.");
+    console.log("V3: GEMINI_API_KEY environment variable was loaded successfully.");
 } else {
-    // This error will appear in your Cloud Function logs if the variable is not set correctly in the GCP console.
-    console.error("CRITICAL FAILURE: GEMINI_API_KEY environment variable NOT found.");
+    console.error("V3: CRITICAL FAILURE - GEMINI_API_KEY environment variable NOT found.");
 }
 
 const ai = genkit({
     plugins: [
         googleAI({
-            apiKey: process.env.GEMINI_API_KEY, // Reads the key set in the GCP Console
+            apiKey: process.env.GEMINI_API_KEY,
         }),
     ],
-    // FINAL FIX 2: Using the latest compatible model name.
     model: gemini('gemini-1.5-flash'),
 });
 
@@ -50,63 +47,52 @@ export const rpgAssistantFlow = ai.defineFlow(
     },
     async (input: { userPrompt: string, conversationHistory?: any[] }) => {
         const { userPrompt, conversationHistory } = input;
-
-        const fullPrompt = `You are Bastion, a helpful, creative, and knowledgeable assistant for the Tangent SFF RPG.
-        The user's current request is: "${userPrompt}"
-        Please provide a concise, relevant, and creative response.`;
-
+        const fullPrompt = `You are Bastion, a helpful assistant for the Tangent SFF RPG.`;
         const response = await ai.generate({
             prompt: fullPrompt,
-            history: conversationHistory, // Pass history directly to the model
-            config: {
-                temperature: 0.7,
-                maxOutputTokens: 500,
-            },
+            history: conversationHistory,
+            config: { temperature: 0.7, maxOutputTokens: 500 },
         });
-
-        return response.text;
+        return response.text();
     }
 );
 
 // =========================================================
-// Cloud Function: callRpgAssistantV2
+// Cloud Function: callRpgAssistantV3
 // =========================================================
-export const callRpgAssistantV2 = onCall(
+export const callRpgAssistantV3 = onCall(
     {
         timeoutSeconds: 300,
         memory: "512MiB",
-        cors: /.*/, // Allow all origins
+        cors: /.*/,
     },
     async (request: CallableRequest<{ userPrompt: string, conversationHistory: any[] }>) => {
-        // This log message is added to force a redeployment.
-        console.log("Executing function version 4.0...");
+        console.log("Executing function version V3 (Clean Slate)...");
 
-        // 1. Authentication Check
         if (!request.auth) {
-            console.error("Function call failed: Unauthenticated.");
-            throw new HttpsError('unauthenticated', 'The AI assistant requires authentication.');
+            throw new HttpsError('unauthenticated', 'The function requires authentication.');
         }
 
-        // 2. Input Validation
         const { userPrompt, conversationHistory } = request.data;
         if (!userPrompt || typeof userPrompt !== 'string') {
-            console.error("Function call failed: Invalid userPrompt.", { data: request.data });
             throw new HttpsError('invalid-argument', 'The function expects a valid "userPrompt" string.');
         }
 
-        console.log(`V2 function invoked by user ${request.auth.uid} with prompt: "${userPrompt}"`);
-
-        // 3. Execute the AI Flow
         try {
-            const aiResponse = await rpgAssistantFlow.run({ userPrompt, conversationHistory });
-            console.log("Successfully received response from AI flow.");
-            return { response: aiResponse };
-        } catch (error) {
-            console.error("CRITICAL: Error executing RPG Assistant Flow:", error);
-            if (error instanceof Error && 'message' in error) {
-                console.error("Underlying error message:", error.message);
-            }
-            throw new HttpsError('internal', 'An internal error occurred while processing your request. Check the function logs for details.');
+            const aiResponseText = await rpgAssistantFlow.run({ userPrompt, conversationHistory });
+
+            // FIX: Explicitly cast the response to a primitive string to prevent serialization errors.
+            // A complex object can sometimes log as a string but fail to serialize.
+            const responsePayload = {
+                response: `${aiResponseText}`
+            };
+
+            console.log("Successfully prepared payload. Sending to client.");
+            return responsePayload;
+
+        } catch (error: any) {
+            console.error("CRITICAL ERROR in V3:", error);
+            throw new HttpsError('internal', 'An internal error occurred. Check function logs for debug trace.');
         }
     }
 );
