@@ -236,16 +236,15 @@
         import 'https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore-compat.js';
         import 'https://www.gstatic.com/firebasejs/9.10.0/firebase-functions-compat.js';
 
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-			const firebaseConfig = {
-				apiKey: "AIzaSyAMpS56HSVunbo4PxPOFHAm9pFq_pXEDM8",
-				authDomain: "tangentsffrpg-db.firebaseapp.com",
-				projectId: "tangentsffrpg-db",
-				storageBucket: "tangentsffrpg-db.firebasestorage.app",
-				messagingSenderId: "583360037097",
-				appId: "1:583360037097:web:2ea3f057bf51d54fd8b078",
-				measurementId: "G-JVE9ZMKSRL"
-};
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
         
         // --- Initialize Firebase ---
         firebase.initializeApp(firebaseConfig);
@@ -319,9 +318,27 @@
 
                 chatMessages.removeChild(thinkingMessage);
 
-                const aiResponse = result.data.response;
-                addMessageToUI('ai', aiResponse);
-                conversationHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                // --- Defensive Text Extraction ---
+                // This robustly handles the response from the server.
+                let responseText = '[Error: Could not extract text from response]';
+                const data = result.data;
+
+                if (typeof data === 'string') {
+                    // If the server sends a raw string
+                    responseText = data;
+                } else if (typeof data === 'object' && data !== null) {
+                    // If the server sends an object, look for the 'response' property
+                    if (typeof data.response === 'string') {
+                        responseText = data.response; // This is the expected path
+                    } else {
+                        // As a fallback, stringify the object for debugging
+                        responseText = JSON.stringify(data);
+                    }
+                }
+                // --- End Defensive Text Extraction ---
+
+                addMessageToUI('ai', responseText);
+                conversationHistory.push({ role: "model", parts: [{ text: responseText }] });
 
             } catch (error) {
                 console.error("Error calling AI assistant Cloud Function:", error);
